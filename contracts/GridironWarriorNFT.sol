@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./RandomNumberGenerator.sol";
 
 contract GridironWarriorNFT is ERC721, Ownable {
@@ -11,7 +12,9 @@ contract GridironWarriorNFT is ERC721, Ownable {
     uint256 public maxSupply = 10;
     uint256 public mintPrice = 0.01 ether;
     string public baseURI;
+
     mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => address) public requestToSender;
 
     event NFTMinted(
         uint256 indexed tokenId,
@@ -19,12 +22,27 @@ contract GridironWarriorNFT is ERC721, Ownable {
         uint256 randomNumber
     );
 
+    event MintRequested(address indexed sender, uint256 indexed requestId);
+    event FundsWithdrawn(address indexed owner, uint256 amount);
+
     constructor(
         address _randomNumberGenerator,
         string memory _baseURI
-    ) ERC721("Gridiron Warrior - QB Edition", "GWQB") {
+    ) ERC721("Gridiron Warrior - QB Edition", "GWQB") Ownable(msg.sender) {
         randomNumberGenerator = RandomNumberGenerator(_randomNumberGenerator);
         baseURI = _baseURI;
+    }
+
+    function setTestingMode(bool _testingMode) external onlyOwner {
+        testingMode = _testingMode;
+    }
+
+    function setMaxSupply(uint256 _newMaxSupply) external onlyOwner {
+        require(
+            _newMaxSupply >= currentTokenId,
+            "New max supply must be greater than or equal to current token count"
+        );
+        maxSupply = _newMaxSupply;
     }
 
     function mintNFT() external payable {
@@ -32,63 +50,66 @@ contract GridironWarriorNFT is ERC721, Ownable {
         require(msg.value >= mintPrice, "Insufficient funds to mint");
 
         uint256 requestId = randomNumberGenerator.requestRandomWords(false);
-        fulfillMint(requestId);
+        requestToSender[requestId] = msg.sender;
+
+        emit MintRequested(msg.sender, requestId);
     }
 
-    function fulfillMint(uint256 _requestId) internal {
-        (bool fulfilled, uint256 randomNumber) = randomNumberGenerator
-            .getRequestStatus(_requestId);
-        require(fulfilled, "Random number not fulfilled yet");
+    bool public testingMode = false;
+
+    function fulfillMint(
+        uint256 _requestId,
+        uint256[] memory _randomWords
+    ) external {
+        if (!testingMode) {
+            require(
+                msg.sender == address(randomNumberGenerator),
+                "Only the VRF can fulfill"
+            );
+        }
+
+        uint256 randomNumber = _randomWords[0];
+        address nftRecipient = requestToSender[_requestId];
+
+        require(nftRecipient != address(0), "Invalid recipient address");
 
         currentTokenId++;
-        _safeMint(msg.sender, currentTokenId);
+        _safeMint(nftRecipient, currentTokenId);
 
-        string memory tokenURI = string(
-            abi.encodePacked(baseURI, "/", uint2str(randomNumber), ".json")
+        string memory newTokenURI = string(
+            abi.encodePacked(baseURI, Strings.toString(randomNumber), ".json")
         );
-        _setTokenURI(currentTokenId, tokenURI);
 
-        emit NFTMinted(currentTokenId, tokenURI, randomNumber);
+        _setTokenURI(currentTokenId, newTokenURI);
+
+        emit NFTMinted(currentTokenId, newTokenURI, randomNumber);
+
+        delete requestToSender[_requestId];
     }
 
-    function _setTokenURI(uint256 tokenId, string memory tokenURI) internal {
-        require(_exists(tokenId), "URI set of nonexistent token");
-        _tokenURIs[tokenId] = tokenURI;
+    function _setTokenURI(uint256 tokenId, string memory newTokenURI) internal {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "URI set of nonexistent token"
+        );
+        _tokenURIs[tokenId] = newTokenURI;
     }
 
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
         require(
-            _exists(tokenId),
+            _ownerOf(tokenId) != address(0),
             "ERC721Metadata: URI query for nonexistent token"
         );
         return _tokenURIs[tokenId];
     }
 
     function withdraw() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
-    }
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No funds to withdraw");
+        payable(owner()).transfer(balance);
 
-    function uint2str(uint256 _i) internal pure returns (string memory) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len;
-        while (_i != 0) {
-            k = k - 1;
-            uint8 temp = (48 + uint8(_i - (_i / 10) * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
+        emit FundsWithdrawn(owner(), balance);
     }
 }
