@@ -2,5 +2,8 @@ node_modules/
 artifacts/
 cache/
 typechain-types/
+ignition/deployments/
+
+
 
 .env
