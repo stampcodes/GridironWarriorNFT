@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
-import {VRFConsumerBaseV2Plus} from "@chainlink/contracts@1.2.0/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {VRFV2PlusClient} from "@chainlink/contracts@1.2.0/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 contract RandomNumberGenerator is VRFConsumerBaseV2Plus {
     event RequestSent(uint256 requestId, uint32 numWords);
@@ -49,7 +49,7 @@ contract RandomNumberGenerator is VRFConsumerBaseV2Plus {
 
     function requestRandomWords(
         bool enableNativePayment
-    ) external onlyOwner returns (uint256 requestId) {
+    ) external returns (uint256 requestId) {
         require(
             totalGeneratedNumbers < availableNumbers.length,
             "All numbers have been generated."
@@ -84,7 +84,10 @@ contract RandomNumberGenerator is VRFConsumerBaseV2Plus {
         uint256 _requestId,
         uint256[] calldata _randomWords
     ) internal override {
-        require(s_requests[_requestId].exists, "Request not found");
+        require(
+            s_requests[_requestId].exists,
+            "Request not found or already fulfilled"
+        );
 
         uint256 randomIndex = _randomWords[0] % availableNumbers.length;
 
@@ -105,7 +108,10 @@ contract RandomNumberGenerator is VRFConsumerBaseV2Plus {
     function getRequestStatus(
         uint256 _requestId
     ) external view returns (bool fulfilled, uint256 randomNumber) {
-        require(s_requests[_requestId].exists, "Request not found");
+        require(
+            s_requests[_requestId].exists,
+            "Request not found or already fulfilled"
+        );
         RequestStatus memory request = s_requests[_requestId];
         return (request.fulfilled, request.randomNumber);
     }
