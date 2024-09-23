@@ -4,14 +4,18 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const Navbar = () => {
   return (
-    <nav className=" flex justify-between items-center p-3  shadow-xl">
+    <nav className=" flex justify-between items-center p-3 h-[130px] shadow-xl">
       <a href="https://github.com/stampcodes" target="_blank">
         <FontAwesomeIcon
           className="h-[70px] text-[#b7441a] cursor-pointer hover:text-[#be5630] transition duration-300 hover:scale-110 ml-10 "
           icon={faGithub}
         />
       </a>
-      <img src={logo} className=" w-[250px] ml-20 " alt="logo" />
+      <img
+        src={logo}
+        className=" w-[250px] absolute left-[830px] "
+        alt="logo"
+      />
       <div className="mr-10">
         <w3m-button />
       </div>
