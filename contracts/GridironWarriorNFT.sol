@@ -15,11 +15,14 @@ contract GridironWarriorNFT is ERC721, Ownable {
 
     mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => address) public requestToSender;
+    mapping(address => uint256) public senderToRequestId;
+    mapping(address => uint256) public ownerToTokenId;
 
     event NFTMinted(
         uint256 indexed tokenId,
         string tokenURI,
-        uint256 randomNumber
+        uint256 randomNumber,
+        address indexed minter
     );
 
     event MintRequested(address indexed sender, uint256 indexed requestId);
@@ -45,22 +48,21 @@ contract GridironWarriorNFT is ERC721, Ownable {
         maxSupply = _newMaxSupply;
     }
 
-    function mintNFT() external payable {
+    function requestToMint() external payable {
         require(currentTokenId < maxSupply, "Max supply reached");
         require(msg.value >= mintPrice, "Insufficient funds to mint");
+        require(ownerToTokenId[msg.sender] == 0, "You can mint only once");
 
         uint256 requestId = randomNumberGenerator.requestRandomWords(false);
         requestToSender[requestId] = msg.sender;
+        senderToRequestId[msg.sender] = requestId;
 
         emit MintRequested(msg.sender, requestId);
     }
 
     bool public testingMode = false;
 
-    function fulfillMint(
-        uint256 _requestId,
-        uint256[] memory _randomWords
-    ) external {
+    function fulfillMint() external {
         if (!testingMode) {
             require(
                 msg.sender == address(randomNumberGenerator),
@@ -68,10 +70,17 @@ contract GridironWarriorNFT is ERC721, Ownable {
             );
         }
 
-        uint256 randomNumber = _randomWords[0];
-        address nftRecipient = requestToSender[_requestId];
+        uint256 requestId = senderToRequestId[msg.sender];
+        require(requestId != 0, "No mint request found for this address");
 
+        (bool fulfilled, uint256 randomNumber) = randomNumberGenerator
+            .getRequestStatus(requestId);
+        require(fulfilled, "Random number not yet fulfilled");
+
+        address nftRecipient = requestToSender[requestId];
         require(nftRecipient != address(0), "Invalid recipient address");
+
+        require(currentTokenId < maxSupply, "Max supply reached");
 
         currentTokenId++;
         _safeMint(nftRecipient, currentTokenId);
@@ -82,9 +91,12 @@ contract GridironWarriorNFT is ERC721, Ownable {
 
         _setTokenURI(currentTokenId, newTokenURI);
 
-        emit NFTMinted(currentTokenId, newTokenURI, randomNumber);
+        ownerToTokenId[nftRecipient] = currentTokenId;
 
-        delete requestToSender[_requestId];
+        emit NFTMinted(currentTokenId, newTokenURI, randomNumber, msg.sender);
+
+        delete requestToSender[requestId];
+        delete senderToRequestId[msg.sender];
     }
 
     function _setTokenURI(uint256 tokenId, string memory newTokenURI) internal {
@@ -103,6 +115,12 @@ contract GridironWarriorNFT is ERC721, Ownable {
             "ERC721Metadata: URI query for nonexistent token"
         );
         return _tokenURIs[tokenId];
+    }
+
+    function findMyNFT() public view returns (string memory) {
+        uint256 tokenId = ownerToTokenId[msg.sender];
+        require(tokenId != 0, "You do not own an NFT");
+        return tokenURI(tokenId);
     }
 
     function withdraw() external onlyOwner {
