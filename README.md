@@ -35,7 +35,7 @@ This project creates a limited collection of 10 unique NFTs, each representing a
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/gridironWarriorNFT.git
+git clone https://github.com/stampcodes/gridironWarriorNFT.git
 ```
 
 2. Navigate to the project directory:
@@ -52,16 +52,22 @@ npm install
 
 4. Set up the .env file with your private key and Sepolia network endpoint.
 
-5. Deploy the contract to Sepolia:
+5. Compile the contract:
 
 ```bash
-npx hardhat ignition deploy ignition/modules/RandomAndNFTModule.ts --network sepolia
+npx hardhat compile
 ```
 
 6. Run tests to verify everything works correctly:
 
 ```bash
 npx hardhat test
+```
+
+7. Deploy the contract to Sepolia:
+
+```bash
+npx hardhat ignition deploy ignition/modules/RandomAndNFTModule.ts --network sepolia
 ```
 
 ## Deployment
