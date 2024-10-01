@@ -27,28 +27,32 @@ describe("GridironWarriorNFT", function () {
   }
 
   it("Should mint an NFT and assign it to the correct owner", async function () {
-    const { nft, addr1 } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock, addr1 } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
     await nft.setTestingMode(true);
 
-    await nft.connect(addr1).mintNFT({ value: mintPrice });
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
 
-    await nft.connect(addr1).fulfillMint(1, [5]);
+    await rngMock.fulfillRandomWords(1);
+
+    await nft.connect(addr1).fulfillMint();
 
     const ownerOfToken = await nft.ownerOf(1);
     expect(ownerOfToken).to.equal(addr1.address);
   });
 
   it("Should return the correct tokenURI after minting", async function () {
-    const { nft, addr1, owner } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock, addr1 } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(owner).setTestingMode(true);
+    await nft.setTestingMode(true);
 
-    await nft.connect(addr1).mintNFT({ value: mintPrice });
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
 
-    await nft.connect(owner).fulfillMint(1, [5]);
+    await rngMock.fulfillRandomWords(1);
+
+    await nft.connect(addr1).fulfillMint();
 
     const tokenURI = await nft.tokenURI(1);
     expect(tokenURI).to.equal(
@@ -57,29 +61,29 @@ describe("GridironWarriorNFT", function () {
   });
 
   it("Should revert mint if max supply is reached", async function () {
-    const { nft, addr1, owner } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(owner).setTestingMode(true);
+    await nft.setTestingMode(true);
 
-    const randomNumbers = Array.from({ length: 10 }, (_, i) => i + 1);
-
+    const signers = await ethers.getSigners();
     let simulatedRequestId = 1;
 
     for (let i = 0; i < 10; i++) {
-      await nft.connect(addr1).mintNFT({ value: mintPrice });
+      const currentAddr = signers[i];
 
-      const randomIndex = Math.floor(Math.random() * randomNumbers.length);
-      const randomValue = randomNumbers[randomIndex];
-      randomNumbers.splice(randomIndex, 1);
+      await nft.connect(currentAddr).requestToMint({ value: mintPrice });
 
-      await nft.connect(owner).fulfillMint(simulatedRequestId, [randomValue]);
+      await rngMock.fulfillRandomWords(i + 1);
+
+      await nft.connect(currentAddr).fulfillMint();
 
       simulatedRequestId++;
     }
 
+    const additionalAddr = signers[10];
     await expect(
-      nft.connect(addr1).mintNFT({ value: mintPrice })
+      nft.connect(additionalAddr).requestToMint({ value: mintPrice })
     ).to.be.revertedWith("Max supply reached");
   });
 
@@ -88,7 +92,7 @@ describe("GridironWarriorNFT", function () {
     const lowPayment = parseEther("0.001");
 
     await expect(
-      nft.connect(addr1).mintNFT({ value: lowPayment })
+      nft.connect(addr1).requestToMint({ value: lowPayment })
     ).to.be.revertedWith("Insufficient funds to mint");
   });
 
@@ -96,7 +100,7 @@ describe("GridironWarriorNFT", function () {
     const { nft, owner, addr1 } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(addr1).mintNFT({ value: mintPrice });
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
 
     const contractBalanceBefore = await ethers.provider.getBalance(
       nft.getAddress()
@@ -115,29 +119,28 @@ describe("GridironWarriorNFT", function () {
   });
 
   it("Should not allow duplicate random numbers in fulfillMint", async function () {
-    const { nft, addr1, owner } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(owner).setTestingMode(true);
+    await nft.setTestingMode(true);
 
     const randomNumbers = Array.from({ length: 10 }, (_, i) => i + 1);
     const mintedNumbers = new Set();
-
-    let simulatedRequestId = 1;
+    const signers = await ethers.getSigners();
 
     for (let i = 0; i < 10; i++) {
-      await nft.connect(addr1).mintNFT({ value: mintPrice });
+      const currentAddr = signers[i];
 
-      const randomIndex = Math.floor(Math.random() * randomNumbers.length);
-      const randomValue = randomNumbers[randomIndex];
-      randomNumbers.splice(randomIndex, 1);
+      await nft.connect(currentAddr).requestToMint({ value: mintPrice });
 
-      await nft.connect(owner).fulfillMint(simulatedRequestId, [randomValue]);
+      const randomValue = randomNumbers[i];
+
+      await rngMock.fulfillRandomWords(i + 1);
+
+      await nft.connect(currentAddr).fulfillMint();
 
       expect(mintedNumbers.has(randomValue)).to.be.false;
       mintedNumbers.add(randomValue);
-
-      simulatedRequestId++;
     }
   });
 
@@ -163,8 +166,8 @@ describe("GridironWarriorNFT", function () {
     const { nft, addr1 } = await loadFixture(deployNFTFixture);
     const excessPayment = parseEther("0.1");
 
-    await expect(nft.connect(addr1).mintNFT({ value: excessPayment })).to.not.be
-      .reverted;
+    await expect(nft.connect(addr1).requestToMint({ value: excessPayment })).to
+      .not.be.reverted;
   });
 
   it("Should not allow querying tokenURI for a non-existent token", async function () {
@@ -176,21 +179,27 @@ describe("GridironWarriorNFT", function () {
   });
 
   it("Should revert mint if maxSupply is changed and exceeded", async function () {
-    const { nft, owner, addr1 } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(owner).setTestingMode(true);
+    await nft.setTestingMode(true);
 
-    await nft.connect(owner).setMaxSupply(5);
+    await nft.setMaxSupply(5);
+
+    const signers = await ethers.getSigners();
 
     for (let i = 0; i < 5; i++) {
-      await nft.connect(addr1).mintNFT({ value: mintPrice });
+      const currentAddr = signers[i];
 
-      await nft.connect(owner).fulfillMint(i + 1, [i + 1]);
+      await nft.connect(currentAddr).requestToMint({ value: mintPrice });
+
+      await rngMock.fulfillRandomWords(i + 1);
+
+      await nft.connect(currentAddr).fulfillMint();
     }
 
     await expect(
-      nft.connect(addr1).mintNFT({ value: mintPrice })
+      nft.connect(signers[5]).requestToMint({ value: mintPrice })
     ).to.be.revertedWith("Max supply reached");
   });
 
@@ -200,24 +209,27 @@ describe("GridironWarriorNFT", function () {
 
     await nft.connect(owner).setTestingMode(true);
 
-    await expect(nft.connect(addr1).mintNFT({ value: mintPrice }))
+    await expect(nft.connect(addr1).requestToMint({ value: mintPrice }))
       .to.emit(nft, "MintRequested")
       .withArgs(addr1.address, 1);
   });
   it("Should emit NFTMinted event after the mint is fulfilled", async function () {
-    const { nft, addr1, owner } = await loadFixture(deployNFTFixture);
+    const { nft, rngMock, addr1 } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(owner).setTestingMode(true);
+    await nft.setTestingMode(true);
 
-    await nft.connect(addr1).mintNFT({ value: mintPrice });
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
 
-    await expect(nft.connect(owner).fulfillMint(1, [5]))
+    await rngMock.fulfillRandomWords(1);
+
+    await expect(nft.connect(addr1).fulfillMint())
       .to.emit(nft, "NFTMinted")
       .withArgs(
         1,
         "ipfs://QmPax1ffGTot9yHsRCMmXQpRv1VdbbwcnZ5aAuRK5u79ru/5.json",
-        5
+        5,
+        addr1.address
       );
   });
 
@@ -225,10 +237,45 @@ describe("GridironWarriorNFT", function () {
     const { nft, owner, addr1 } = await loadFixture(deployNFTFixture);
     const mintPrice = parseEther("0.01");
 
-    await nft.connect(addr1).mintNFT({ value: mintPrice });
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
 
     await expect(nft.connect(owner).withdraw())
       .to.emit(nft, "FundsWithdrawn")
       .withArgs(owner.address, mintPrice);
+  });
+
+  it("Should revert if user tries to mint more than one NFT", async function () {
+    const { nft, rngMock, addr1 } = await loadFixture(deployNFTFixture);
+    const mintPrice = parseEther("0.01");
+
+    await nft.setTestingMode(true);
+
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
+
+    await rngMock.fulfillRandomWords(1);
+
+    await nft.connect(addr1).fulfillMint();
+
+    await expect(
+      nft.connect(addr1).requestToMint({ value: mintPrice })
+    ).to.be.revertedWith("You can mint only once");
+  });
+
+  it("Should return the correct tokenURI for the owner when calling findMyNFT", async function () {
+    const { nft, rngMock, owner, addr1 } = await loadFixture(deployNFTFixture);
+    const mintPrice = parseEther("0.01");
+
+    await nft.connect(owner).setTestingMode(true);
+
+    await nft.connect(addr1).requestToMint({ value: mintPrice });
+
+    await rngMock.fulfillRandomWords(1);
+
+    await nft.connect(addr1).fulfillMint();
+
+    const tokenURI = await nft.connect(addr1).findMyNFT();
+    expect(tokenURI).to.equal(
+      "ipfs://QmPax1ffGTot9yHsRCMmXQpRv1VdbbwcnZ5aAuRK5u79ru/5.json"
+    );
   });
 });
