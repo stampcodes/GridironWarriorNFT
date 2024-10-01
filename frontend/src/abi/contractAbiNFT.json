@@ -252,6 +252,12 @@
           "internalType": "uint256",
           "name": "randomNumber",
           "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "minter",
+          "type": "address"
         }
       ],
       "name": "NFTMinted",
@@ -365,18 +371,20 @@
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "findMyNFT",
+      "outputs": [
         {
-          "internalType": "uint256",
-          "name": "_requestId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "_randomWords",
-          "type": "uint256[]"
+          "internalType": "string",
+          "name": "",
+          "type": "string"
         }
       ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "fulfillMint",
       "outputs": [],
       "stateMutability": "nonpayable",
@@ -440,13 +448,6 @@
     },
     {
       "inputs": [],
-      "name": "mintNFT",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "mintPrice",
       "outputs": [
         {
@@ -504,6 +505,25 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "ownerToTokenId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "randomNumberGenerator",
       "outputs": [
@@ -521,6 +541,13 @@
       "name": "renounceOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "requestToMint",
+      "outputs": [],
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -591,6 +618,25 @@
       "name": "safeTransferFrom",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "senderToRequestId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

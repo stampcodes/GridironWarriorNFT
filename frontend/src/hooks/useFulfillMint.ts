@@ -1,7 +1,7 @@
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import contractAbiNFT from "../abi/contractAbiNFT.json";
 
-const useMintRequest = () => {
+const useFulfillMint = () => {
   const {
     data: hash,
     error: fulfillMintError,
@@ -15,7 +15,7 @@ const useMintRequest = () => {
     e.preventDefault();
 
     writeContract({
-      address: "0xDd1Db6811f28C0a2265f6c2B78df2AB945d8c0cc",
+      address: "0x1F6c65610cC400A0e2E7Dca6C2B9B5aE4Be639Cc",
       abi: contractAbiNFT.abi,
       functionName: "fulfillMint",
       args: [],
@@ -28,6 +28,7 @@ const useMintRequest = () => {
   } = useWaitForTransactionReceipt({
     hash: fulfillMintHash,
   });
+
   return {
     handleFulfillMint,
     fulfillMintHash,
@@ -38,4 +39,4 @@ const useMintRequest = () => {
   };
 };
 
-export default useMintRequest;
+export default useFulfillMint;

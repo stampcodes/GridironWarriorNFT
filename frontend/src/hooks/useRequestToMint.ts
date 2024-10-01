@@ -2,7 +2,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ethers } from "ethers";
 import contractAbiNFT from "../abi/contractAbiNFT.json";
 
-const useMintRequest = () => {
+const useRequestToMint = () => {
   const {
     data: hash,
     error: mintRequestError,
@@ -16,9 +16,9 @@ const useMintRequest = () => {
     e.preventDefault();
 
     writeContract({
-      address: "0xDd1Db6811f28C0a2265f6c2B78df2AB945d8c0cc",
+      address: "0x1F6c65610cC400A0e2E7Dca6C2B9B5aE4Be639Cc",
       abi: contractAbiNFT.abi,
-      functionName: "mintNFT",
+      functionName: "requestToMint",
       args: [],
       value: ethers.parseEther("0.01"),
     });
@@ -30,6 +30,7 @@ const useMintRequest = () => {
   } = useWaitForTransactionReceipt({
     hash: mintRequestHash,
   });
+
   return {
     handleMintRequest,
     mintRequestHash,
@@ -40,4 +41,4 @@ const useMintRequest = () => {
   };
 };
 
-export default useMintRequest;
+export default useRequestToMint;
