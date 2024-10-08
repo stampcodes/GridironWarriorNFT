@@ -6,6 +6,21 @@
 
 This project creates a limited collection of 10 unique NFTs, each representing a "Gridiron Warrior - QB Edition". Users can mint an NFT for a fee (0.01 ETH) and receive a randomly generated token from the collection, using Chainlink VRF to guarantee randomness.
 
+## Status of the Project
+
+The **GridironWarriorNFT** project is currently in development. The **smart contracts** have been fully implemented, tested, and deployed on the Sepolia network. The **frontend** is currently under development and will be added in future updates.
+
+### Completed:
+
+- Smart contracts for minting NFTs using Chainlink VRF and Hardhat.
+- Integration with IPFS for decentralized storage of NFT metadata.
+- Deployed contracts on the Sepolia test network.
+
+### In Progress:
+
+- Frontend interface for interacting with the smart contracts.
+- User-friendly minting and NFT management interface.
+
 ## Features
 
 - **Limited Minting**: Only 10 NFTs can be minted.
