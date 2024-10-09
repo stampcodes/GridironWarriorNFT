@@ -12,6 +12,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.5",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.11",
     "@types/mocha": "^10.0.8",
     "@types/node": "^22.5.5",
     "@types/sinon": "^17.0.3",
