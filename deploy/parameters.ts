@@ -12,9 +12,10 @@ if (
 export default {
   subscriptionId: BigInt(process.env.SUBSCRIPTION_ID),
   keyHash: process.env.KEY_HASH,
-  callbackGasLimit: parseInt(process.env.CALLBACK_GAS_LIMIT || "100000"),
-  requestConfirmations: parseInt(process.env.REQUEST_CONFIRMATIONS || "3"),
-  minRange: parseInt(process.env.MIN_RANGE || "1"),
-  maxRange: parseInt(process.env.MAX_RANGE || "10"),
+  vrfCoordinator: process.env.VRF_COORDINATOR || "",
+  callbackGasLimit: parseInt(process.env.CALLBACK_GAS_LIMIT || ""),
+  requestConfirmations: parseInt(process.env.REQUEST_CONFIRMATIONS || ""),
+  minRange: parseInt(process.env.MIN_RANGE || ""),
+  maxRange: parseInt(process.env.MAX_RANGE || ""),
   baseURI: process.env.BASE_URI,
 };
