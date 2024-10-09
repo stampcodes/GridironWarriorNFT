@@ -18,6 +18,7 @@ The **GridironWarriorNFT** project is currently in development. The **smart cont
 
 ### In Progress:
 
+- test for GridironWarriorNewNFT.sol
 - Frontend interface for interacting with the smart contracts.
 - User-friendly minting and NFT management interface.
 
