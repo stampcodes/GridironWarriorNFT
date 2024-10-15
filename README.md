@@ -51,13 +51,13 @@ The **GridironWarriorNFT** project is currently in development. The **smart cont
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/stampcodes/gridironWarriorNFT.git
+git clone https://github.com/stampcodes/gridiron_warrior_nft.git
 ```
 
 2. Navigate to the project directory:
 
 ```bash
-cd gridironWarriorNFT
+cd gridiron_warrior_nft
 ```
 
 3. Install the dependencies:
